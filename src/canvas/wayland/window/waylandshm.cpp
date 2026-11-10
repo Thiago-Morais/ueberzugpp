@@ -190,6 +190,9 @@ void WaylandShmWindow::move_window()
     const int wayland_y = dims.ypixels() + dims.padding_vertical;
     const int xcoord = cur_window.x + wayland_x;
     const int ycoord = cur_window.y + wayland_y;
+    spdlog::get("wayland")->info("[diag] terminal window x={} y={} w={} h={} | cell x={} y={} | xpixels={} ypixels={} | padding h={} v={}",
+                                 cur_window.x, cur_window.y, cur_window.width, cur_window.height, dims.x, dims.y,
+                                 dims.xpixels(), dims.ypixels(), dims.padding_horizontal, dims.padding_vertical);
     config->move_window(appid, xcoord, ycoord);
 }
 

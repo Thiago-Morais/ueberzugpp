@@ -70,7 +70,7 @@ void Terminal::get_terminal_size()
     rows = size.ws_row;
     xpixel = size.ws_xpixel;
     ypixel = size.ws_ypixel;
-    logger->debug("ioctl sizes: COLS={} ROWS={} XPIXEL={} YPIXEL={}", cols, rows, xpixel, ypixel);
+    logger->info("[diag] ioctl sizes: COLS={} ROWS={} XPIXEL={} YPIXEL={}", cols, rows, xpixel, ypixel);
 
     check_iterm2_support();
     if (flags->use_escape_codes) {
@@ -114,8 +114,8 @@ void Terminal::get_terminal_size()
         font_height = static_cast<float>(ypixel) / rows;
     }
 
-    logger->debug("padding_horiz={} padding_vert={}", padding_horizontal, padding_vertical);
-    logger->debug("font_width={} font_height={}", font_width, font_height);
+    logger->info("[diag] padding_horiz={} padding_vert={}", padding_horizontal, padding_vertical);
+    logger->info("[diag] font_width={} font_height={}", font_width, font_height);
 }
 
 void Terminal::set_detected_output()
@@ -178,7 +178,7 @@ void Terminal::get_terminal_size_escape_code()
             std::swap(ypixel, xpixel);
         }
     }
-    logger->debug("ESC sizes XPIXEL={} YPIXEL={}", xpixel, ypixel);
+    logger->info("[diag] ESC sizes XPIXEL={} YPIXEL={}", xpixel, ypixel);
 }
 
 void Terminal::get_terminal_size_xtsm()
@@ -197,7 +197,7 @@ void Terminal::get_terminal_size_xtsm()
     } catch (const std::invalid_argument &) {
         logger->debug("Got unexpected values in get_terminal_size_xtsm");
     }
-    logger->debug("XTSM sizes XPIXEL={} YPIXEL={}", xpixel, ypixel);
+    logger->info("[diag] XTSM sizes XPIXEL={} YPIXEL={}", xpixel, ypixel);
 }
 
 void Terminal::check_sixel_support()
@@ -281,7 +281,7 @@ void Terminal::get_fallback_x11_terminal_sizes()
     const auto [xpix, ypix] = xutil.get_window_dimensions(x11_wid);
     fallback_xpixel = xpix;
     fallback_ypixel = ypix;
-    logger->debug("X11 sizes: XPIXEL={} YPIXEL={}", fallback_xpixel, fallback_ypixel);
+    logger->info("[diag] X11 sizes: XPIXEL={} YPIXEL={}", fallback_xpixel, fallback_ypixel);
 #endif
 }
 
@@ -299,6 +299,7 @@ void Terminal::get_fallback_wayland_terminal_sizes()
     const auto window = config->get_window_info();
     fallback_xpixel = static_cast<uint16_t>(window.width);
     fallback_ypixel = static_cast<uint16_t>(window.height);
+    logger->info("[diag] wayland fallback sizes: XPIXEL={} YPIXEL={}", fallback_xpixel, fallback_ypixel);
 #endif
 }
 
