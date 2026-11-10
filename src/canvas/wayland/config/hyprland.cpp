@@ -87,6 +87,11 @@ void HyprlandSocket::request(const std::string_view payload)
     const UnixSocket socket{socket_path};
     logger->debug("Running socket command {}", payload);
     socket.write(payload.data(), payload.length());
+    // Wait for the reply: Hyprland may drop a request whose client hangs up before it answers.
+    const std::string reply = socket.read_until_empty();
+    if (reply != "ok") {
+        logger->warn("Hyprland rejected command {}: {}", payload, reply);
+    }
 }
 
 auto HyprlandSocket::get_active_window() -> nlohmann::json
