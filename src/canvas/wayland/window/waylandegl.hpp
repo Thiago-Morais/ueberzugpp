@@ -27,6 +27,7 @@
 #include <wayland-egl.h>
 
 #include <memory>
+#include <utility>
 #include <mutex>
 
 class WaylandEglWindow : public WaylandWindow
@@ -75,7 +76,7 @@ class WaylandEglWindow : public WaylandWindow
     struct XdgStructAgg *xdg_agg;
     bool visible = false;
 
-    void move_window();
+    auto window_position() const -> std::pair<int, int>;
     void delete_wayland_structs();
     void delete_xdg_structs();
 

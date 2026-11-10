@@ -32,6 +32,7 @@ class HyprlandSocket : public WaylandConfig
     auto get_focused_output_name() -> std::string override;
     void initial_setup(std::string_view appid) override;
     void move_window(std::string_view appid, int xcoord, int ycoord) override;
+    void set_initial_position(std::string_view appid, int xcoord, int ycoord) override;
 
   private:
     void disable_focus(std::string_view appid);

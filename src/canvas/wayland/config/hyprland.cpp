@@ -169,16 +169,24 @@ void HyprlandSocket::remove_borders(const std::string_view appid)
     request(payload);
 }
 
+void HyprlandSocket::set_initial_position(const std::string_view appid, int xcoord, int ycoord)
+{
+    const int res_x = physical_to_logical(xcoord, output_scale);
+    const int res_y = physical_to_logical(ycoord, output_scale);
+    if (is_lua_protocol) {
+        request(fmt::format("/eval hl.window_rule({{match={{title='{}'}},move={{{},{}}}}})", appid, res_x, res_y));
+    } else {
+        request(fmt::format("/keyword windowrule match:title {}, move {} {}", appid, res_x, res_y));
+    }
+}
+
 void HyprlandSocket::move_window(const std::string_view appid, int xcoord, int ycoord)
 {
     const int res_x = physical_to_logical(xcoord, output_scale);
     const int res_y = physical_to_logical(ycoord, output_scale);
     if (is_lua_protocol) {
-        // The rule only positions windows as they map, and this window has already mapped
-        // (Hyprland centered it), so also move it directly.
-        request(fmt::format("/eval hl.window_rule({{match={{title='{}'}},move={{{},{}}}}})", appid, res_x, res_y));
         request(fmt::format("/dispatch hl.dsp.window.move({{x={},y={},window='title:{}'}})", res_x, res_y, appid));
     } else {
-        request(fmt::format("/keyword windowrule match:title {}, move {} {}", appid, res_x, res_y));
+        request(fmt::format("/dispatch movewindowpixel exact {} {},title:{}", res_x, res_y, appid));
     }
 }

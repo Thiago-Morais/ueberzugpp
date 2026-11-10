@@ -27,6 +27,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <utility>
 #include <wayland-client.h>
 
 class WaylandShmWindow : public WaylandWindow
@@ -68,7 +69,8 @@ class WaylandShmWindow : public WaylandWindow
     struct XdgStructAgg *xdg_agg;
     void *this_ptr;
 
-    void move_window();
+    auto window_position() const -> std::pair<int, int>;
+    std::pair<int, int> position;
     void xdg_setup();
 
     void setup_listeners();

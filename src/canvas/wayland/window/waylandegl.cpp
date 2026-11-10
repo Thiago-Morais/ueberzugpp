@@ -139,10 +139,12 @@ void WaylandEglWindow::delete_wayland_structs()
 
 void WaylandEglWindow::draw()
 {
+    const auto [xcoord, ycoord] = window_position();
+    config->set_initial_position(appid, xcoord, ycoord);
     load_framebuffer();
 
     wl_surface_commit(surface);
-    move_window();
+    config->move_window(appid, xcoord, ycoord);
 }
 
 void WaylandEglWindow::load_framebuffer()
@@ -159,15 +161,13 @@ void WaylandEglWindow::load_framebuffer()
     });
 }
 
-void WaylandEglWindow::move_window()
+auto WaylandEglWindow::window_position() const -> std::pair<int, int>
 {
     const auto dims = image->dimensions();
     const auto cur_window = config->get_window_info();
     const int wayland_x = dims.xpixels() + dims.padding_horizontal;
     const int wayland_y = dims.ypixels() + dims.padding_vertical;
-    const int xcoord = cur_window.x + wayland_x;
-    const int ycoord = cur_window.y + wayland_y;
-    config->move_window(appid, xcoord, ycoord);
+    return {cur_window.x + wayland_x, cur_window.y + wayland_y};
 }
 
 void WaylandEglWindow::generate_frame()

@@ -52,7 +52,8 @@ void WaylandShmWindow::commit_processed(void *data, struct wl_callback *callback
         return;
     }
     auto *shm_window = dynamic_cast<WaylandShmWindow *>(window.get());
-    shm_window->move_window();
+    const auto [xcoord, ycoord] = shm_window->position;
+    shm_window->config->move_window(shm_window->appid, xcoord, ycoord);
 }
 
 void WaylandShmWindow::wl_surface_frame_done(void *data, struct wl_callback *callback, [[maybe_unused]] uint32_t time)
@@ -128,6 +129,8 @@ void WaylandShmWindow::wl_draw(int32_t scale_factor)
     std::memcpy(shm->pool_data, image->data(), image->size());
     wl_surface_attach(surface, shm->buffer, 0, 0);
     wl_surface_set_buffer_scale(surface, scale_factor);
+    position = window_position();
+    config->set_initial_position(appid, position.first, position.second);
     wl_surface_commit(surface);
     // The window only exists in the compositor once it has processed this commit, and
     // move_window() talks to it over a separate IPC socket. The sync callback fires after
@@ -180,15 +183,13 @@ void WaylandShmWindow::delete_wayland_structs()
     }
 }
 
-void WaylandShmWindow::move_window()
+auto WaylandShmWindow::window_position() const -> std::pair<int, int>
 {
     const auto dims = image->dimensions();
     const auto cur_window = config->get_window_info();
     const int wayland_x = dims.xpixels() + dims.padding_horizontal;
     const int wayland_y = dims.ypixels() + dims.padding_vertical;
-    const int xcoord = cur_window.x + wayland_x;
-    const int ycoord = cur_window.y + wayland_y;
-    config->move_window(appid, xcoord, ycoord);
+    return {cur_window.x + wayland_x, cur_window.y + wayland_y};
 }
 
 void WaylandShmWindow::generate_frame()
