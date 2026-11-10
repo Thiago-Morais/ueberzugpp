@@ -195,3 +195,8 @@ void HyprlandSocket::move_window(const std::string_view appid, int xcoord, int y
         request(fmt::format("/dispatch movewindowpixel exact {} {},title:{}", res_x, res_y, appid));
     }
 }
+
+auto HyprlandSocket::get_output_scale() -> std::optional<float>
+{
+    return output_scale;
+}

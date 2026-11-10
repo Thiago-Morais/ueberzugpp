@@ -19,6 +19,7 @@
 
 #include <cmath>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -53,6 +54,8 @@ class WaylandConfig
     virtual auto get_focused_output_name() -> std::string = 0;
     virtual auto get_window_info() -> struct WaylandWindowGeometry = 0;
     virtual auto is_dummy() -> bool { return false; }
+    // Exact (possibly fractional) scale of the focused output, when the compositor reports it.
+    virtual auto get_output_scale() -> std::optional<float> { return std::nullopt; }
     virtual void initial_setup(std::string_view appid) = 0;
     virtual void move_window(std::string_view appid, int xcoord, int ycoord) = 0;
     // Called before the window maps, so compositors that support it can place the window

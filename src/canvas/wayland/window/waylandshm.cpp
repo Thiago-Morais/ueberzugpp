@@ -19,6 +19,8 @@
 #include "shm.hpp"
 #include "util.hpp"
 
+#include <algorithm>
+
 #include <fmt/format.h>
 
 constexpr int id_len = 10;
@@ -84,6 +86,9 @@ WaylandShmWindow::WaylandShmWindow(WaylandCanvas *canvas, std::unique_ptr<Image>
       appid(fmt::format("ueberzugpp_{}", util::generate_random_string(id_len))),
       xdg_agg(xdg_agg)
 {
+    if (canvas->viewporter != nullptr) {
+        viewport = wp_viewporter_get_viewport(canvas->viewporter, surface);
+    }
     config->initial_setup(appid);
     xdg_setup();
     output_scale = canvas->output_info.at(config->get_focused_output_name());
@@ -128,7 +133,7 @@ void WaylandShmWindow::wl_draw(int32_t scale_factor)
 {
     std::memcpy(shm->pool_data, image->data(), image->size());
     wl_surface_attach(surface, shm->buffer, 0, 0);
-    wl_surface_set_buffer_scale(surface, scale_factor);
+    set_surface_scale(scale_factor);
     position = window_position();
     config->set_initial_position(appid, position.first, position.second);
     wl_surface_commit(surface);
@@ -175,8 +180,28 @@ void WaylandShmWindow::delete_xdg_structs()
     }
 }
 
+void WaylandShmWindow::set_surface_scale(int32_t scale_factor)
+{
+    // The image is sized in physical pixels. An integer buffer scale rounds fractional
+    // scales up (1.6 -> 2) and shrinks the image, so when possible keep the buffer at
+    // scale 1 and let the viewport map it to its exact logical size.
+    const auto output_scale = config->get_output_scale();
+    if (viewport == nullptr || !output_scale.has_value() || output_scale.value() <= 0.0F) {
+        wl_surface_set_buffer_scale(surface, scale_factor);
+        return;
+    }
+    const int logical_width = std::max(1, physical_to_logical(image->width(), output_scale.value()));
+    const int logical_height = std::max(1, physical_to_logical(image->height(), output_scale.value()));
+    wl_surface_set_buffer_scale(surface, 1);
+    wp_viewport_set_destination(viewport, logical_width, logical_height);
+}
+
 void WaylandShmWindow::delete_wayland_structs()
 {
+    if (viewport != nullptr) {
+        wp_viewport_destroy(viewport);
+        viewport = nullptr;
+    }
     if (surface != nullptr) {
         wl_surface_destroy(surface);
         surface = nullptr;
