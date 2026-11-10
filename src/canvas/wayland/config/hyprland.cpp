@@ -53,7 +53,7 @@ void HyprlandSocket::check_lua_protocol()
     socket.write(payload.data(), payload.size());
     const std::string result = socket.read_until_empty();
     is_lua_protocol = result.find("hl.dispatch") != std::string::npos;
-    logger->info("Hyprland is using lua IPC");
+    logger->info("Hyprland is using {} IPC", is_lua_protocol ? "lua" : "legacy");
 }
 
 void HyprlandSocket::set_active_monitor()
@@ -173,11 +173,12 @@ void HyprlandSocket::move_window(const std::string_view appid, int xcoord, int y
 {
     const int res_x = physical_to_logical(xcoord, output_scale);
     const int res_y = physical_to_logical(ycoord, output_scale);
-    std::string payload;
     if (is_lua_protocol) {
-        payload = fmt::format("/eval hl.window_rule({{match={{title='{}'}},move={{{},{}}}}})", appid, res_x, res_y);
+        // The rule positions the window when it maps, but it may arrive after the
+        // window already mapped (Hyprland then centers it), so also move it directly.
+        request(fmt::format("/eval hl.window_rule({{match={{title='{}'}},move={{{},{}}}}})", appid, res_x, res_y));
+        request(fmt::format("/dispatch hl.dsp.window.move({{x={},y={},window='title:{}'}})", res_x, res_y, appid));
     } else {
-        payload = fmt::format("/keyword windowrule match:title {}, move {} {}", appid, res_x, res_y);
+        request(fmt::format("/keyword windowrule match:title {}, move {} {}", appid, res_x, res_y));
     }
-    request(payload);
 }
