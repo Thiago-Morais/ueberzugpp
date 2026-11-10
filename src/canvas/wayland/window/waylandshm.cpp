@@ -52,6 +52,7 @@ void WaylandShmWindow::commit_processed(void *data, struct wl_callback *callback
         return;
     }
     auto *shm_window = dynamic_cast<WaylandShmWindow *>(window.get());
+    spdlog::get("wayland")->info("[diag] commit processed for {}", shm_window->appid);
     shm_window->move_window();
 }
 
@@ -129,6 +130,7 @@ void WaylandShmWindow::wl_draw(int32_t scale_factor)
     wl_surface_attach(surface, shm->buffer, 0, 0);
     wl_surface_set_buffer_scale(surface, scale_factor);
     wl_surface_commit(surface);
+    spdlog::get("wayland")->info("[diag] committed {}", appid);
     // The window only exists in the compositor once it has processed this commit, and
     // move_window() talks to it over a separate IPC socket. The sync callback fires after
     // every request sent before it was processed, so the window is mapped by then.

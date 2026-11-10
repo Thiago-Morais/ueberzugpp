@@ -85,8 +85,9 @@ auto HyprlandSocket::request_result(const std::string_view payload) -> nlohmann:
 void HyprlandSocket::request(const std::string_view payload)
 {
     const UnixSocket socket{socket_path};
-    logger->debug("Running socket command {}", payload);
     socket.write(payload.data(), payload.length());
+    const std::string reply = socket.read_until_empty();
+    logger->info("[diag] sent: {} | reply: {}", payload, reply);
 }
 
 auto HyprlandSocket::get_active_window() -> nlohmann::json
@@ -173,6 +174,13 @@ void HyprlandSocket::move_window(const std::string_view appid, int xcoord, int y
 {
     const int res_x = physical_to_logical(xcoord, output_scale);
     const int res_y = physical_to_logical(ycoord, output_scale);
+    const auto clients = request_result("j/clients");
+    for (const auto &client : clients) {
+        if (client.at("title") == appid) {
+            logger->info("[diag] before move: {} mapped={} at={}", appid, client.value("mapped", false), client.at("at").dump());
+        }
+    }
+    logger->info("[diag] move_window {} physical=({},{}) scale={} logical=({},{})", appid, xcoord, ycoord, output_scale, res_x, res_y);
     if (is_lua_protocol) {
         // The rule only positions windows as they map, and this window has already mapped
         // (Hyprland centered it), so also move it directly.
