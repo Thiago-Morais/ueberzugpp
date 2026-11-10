@@ -37,6 +37,7 @@ class WaylandShmWindow : public WaylandWindow
     ~WaylandShmWindow() override;
     static void xdg_surface_configure(void *data, struct xdg_surface *xdg_surface, uint32_t serial);
     static void wl_surface_frame_done(void *data, struct wl_callback *callback, uint32_t time);
+    static void commit_processed(void *data, struct wl_callback *callback, uint32_t serial);
 
     void draw() override {}
     void wl_draw(int32_t scale_factor) override;

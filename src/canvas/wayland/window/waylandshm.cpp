@@ -29,6 +29,8 @@ constexpr struct xdg_surface_listener xdg_surface_listener = {
 
 constexpr struct wl_callback_listener frame_listener = {.done = WaylandShmWindow::wl_surface_frame_done};
 
+constexpr struct wl_callback_listener commit_processed_listener = {.done = WaylandShmWindow::commit_processed};
+
 void WaylandShmWindow::xdg_surface_configure(void *data, struct xdg_surface *xdg_surface, uint32_t serial)
 {
     xdg_surface_ack_configure(xdg_surface, serial);
@@ -39,6 +41,18 @@ void WaylandShmWindow::xdg_surface_configure(void *data, struct xdg_surface *xdg
     }
     auto *shm_window = dynamic_cast<WaylandShmWindow *>(window.get());
     shm_window->wl_draw(shm_window->output_scale);
+}
+
+void WaylandShmWindow::commit_processed(void *data, struct wl_callback *callback, [[maybe_unused]] uint32_t serial)
+{
+    wl_callback_destroy(callback);
+    const auto *tmp = static_cast<struct XdgStruct *>(data);
+    const auto window = tmp->ptr.lock();
+    if (!window) {
+        return;
+    }
+    auto *shm_window = dynamic_cast<WaylandShmWindow *>(window.get());
+    shm_window->move_window();
 }
 
 void WaylandShmWindow::wl_surface_frame_done(void *data, struct wl_callback *callback, [[maybe_unused]] uint32_t time)
@@ -115,10 +129,11 @@ void WaylandShmWindow::wl_draw(int32_t scale_factor)
     wl_surface_attach(surface, shm->buffer, 0, 0);
     wl_surface_set_buffer_scale(surface, scale_factor);
     wl_surface_commit(surface);
-    // Send the commit now: the compositor only maps the window once it receives it,
-    // and move_window() talks to the compositor over its own IPC socket right away.
-    wl_display_flush(display);
-    move_window();
+    // The window only exists in the compositor once it has processed this commit, and
+    // move_window() talks to it over a separate IPC socket. The sync callback fires after
+    // every request sent before it was processed, so the window is mapped by then.
+    auto *sync = wl_display_sync(display);
+    wl_callback_add_listener(sync, &commit_processed_listener, this_ptr);
 }
 
 void WaylandShmWindow::show()

@@ -19,9 +19,7 @@
 #include "tmux.hpp"
 #include "util/socket.hpp"
 
-#include <chrono>
 #include <filesystem>
-#include <thread>
 #include <fmt/format.h>
 #include <nlohmann/json.hpp>
 #include <range/v3/all.hpp>
@@ -171,34 +169,15 @@ void HyprlandSocket::remove_borders(const std::string_view appid)
     request(payload);
 }
 
-auto HyprlandSocket::wait_for_window(const std::string_view appid) -> bool
-{
-    constexpr int max_attempts = 20;
-    constexpr auto retry_delay = std::chrono::milliseconds(5);
-    for (int attempt = 0; attempt < max_attempts; ++attempt) {
-        const auto clients = request_result("j/clients");
-        const bool mapped = ranges::any_of(clients, [appid](const njson &json) { return json.at("title") == appid; });
-        if (mapped) {
-            return true;
-        }
-        std::this_thread::sleep_for(retry_delay);
-    }
-    logger->debug("Window {} did not map in time", appid);
-    return false;
-}
-
 void HyprlandSocket::move_window(const std::string_view appid, int xcoord, int ycoord)
 {
     const int res_x = physical_to_logical(xcoord, output_scale);
     const int res_y = physical_to_logical(ycoord, output_scale);
     if (is_lua_protocol) {
-        // The rule positions the window when it maps, but the window may map before the
-        // rule is applied (Hyprland then centers it), so also move it directly once it
-        // exists: dispatching before it maps does nothing.
+        // The rule only positions windows as they map, and this window has already mapped
+        // (Hyprland centered it), so also move it directly.
         request(fmt::format("/eval hl.window_rule({{match={{title='{}'}},move={{{},{}}}}})", appid, res_x, res_y));
-        if (wait_for_window(appid)) {
-            request(fmt::format("/dispatch hl.dsp.window.move({{x={},y={},window='title:{}'}})", res_x, res_y, appid));
-        }
+        request(fmt::format("/dispatch hl.dsp.window.move({{x={},y={},window='title:{}'}})", res_x, res_y, appid));
     } else {
         request(fmt::format("/keyword windowrule match:title {}, move {} {}", appid, res_x, res_y));
     }
