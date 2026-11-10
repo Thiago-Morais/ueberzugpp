@@ -17,6 +17,7 @@
 #ifndef WAYLAND_CONFIG_H
 #define WAYLAND_CONFIG_H
 
+#include <cmath>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -27,6 +28,20 @@ struct WaylandWindowGeometry {
     int x;
     int y;
 };
+
+// Compositors report window geometry in logical coordinates, while terminals report
+// their size (and therefore cell sizes) in physical pixels. Window geometry is converted
+// to physical pixels so offsets can be added, and the result is converted back to
+// logical coordinates before asking the compositor to move a window.
+inline auto logical_to_physical(double value, float scale) -> int
+{
+    return static_cast<int>(std::lround(value * scale));
+}
+
+inline auto physical_to_logical(double value, float scale) -> int
+{
+    return static_cast<int>(std::lround(value / scale));
+}
 
 class WaylandConfig
 {
