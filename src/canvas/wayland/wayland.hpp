@@ -54,6 +54,7 @@ class WaylandCanvas : public Canvas
     void show() override;
     void hide() override;
 
+    struct wl_display *display = nullptr;
     struct wl_compositor *compositor = nullptr;
     struct wl_shm *wl_shm = nullptr;
     struct xdg_wm_base *xdg_base = nullptr;
@@ -62,7 +63,6 @@ class WaylandCanvas : public Canvas
     std::unordered_map<std::string, int32_t> output_info;
 
   private:
-    struct wl_display *display = nullptr;
     struct wl_registry *registry = nullptr;
     std::thread event_handler;
 

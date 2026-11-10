@@ -54,6 +54,7 @@ class WaylandShmWindow : public WaylandWindow
   private:
     WaylandConfig *config;
 
+    struct wl_display *display = nullptr;
     struct xdg_wm_base *xdg_base = nullptr;
     struct wl_surface *surface = nullptr;
     struct xdg_surface *xdg_surface = nullptr;

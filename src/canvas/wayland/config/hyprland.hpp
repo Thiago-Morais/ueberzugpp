@@ -42,6 +42,7 @@ class HyprlandSocket : public WaylandConfig
     auto request_result(std::string_view payload) -> nlohmann::json;
     auto get_active_window() -> nlohmann::json;
     void set_active_monitor();
+    auto wait_for_window(std::string_view appid) -> bool;
     void check_lua_protocol();
 
     std::shared_ptr<spdlog::logger> logger;

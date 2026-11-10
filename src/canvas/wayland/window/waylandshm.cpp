@@ -60,6 +60,7 @@ void WaylandShmWindow::wl_surface_frame_done(void *data, struct wl_callback *cal
 WaylandShmWindow::WaylandShmWindow(WaylandCanvas *canvas, std::unique_ptr<Image> new_image,
                                    struct XdgStructAgg *xdg_agg, WaylandConfig *config)
     : config(config),
+      display(canvas->display),
       xdg_base(canvas->xdg_base),
       surface(wl_compositor_create_surface(canvas->compositor)),
       xdg_surface(xdg_wm_base_get_xdg_surface(xdg_base, surface)),
@@ -114,6 +115,9 @@ void WaylandShmWindow::wl_draw(int32_t scale_factor)
     wl_surface_attach(surface, shm->buffer, 0, 0);
     wl_surface_set_buffer_scale(surface, scale_factor);
     wl_surface_commit(surface);
+    // Send the commit now: the compositor only maps the window once it receives it,
+    // and move_window() talks to the compositor over its own IPC socket right away.
+    wl_display_flush(display);
     move_window();
 }
 
